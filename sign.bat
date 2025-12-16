@@ -1,0 +1,1 @@
+jarsigner.exe -tsa http://timestamp.digicert.com -keystore ".keystore" ./build/libs/SharedPlugin.jar %USERKEY% -storepass %KEYPASS%

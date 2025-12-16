@@ -1,0 +1,9 @@
+{
+	"name": "SharedPlugin",
+	"author": "Several Devs",
+	"version": "0.0.0",
+	"minVersion": "1.131.6 beta 3",
+	"supportedVersion": "1.131.7",
+	"basePackage": "dev.shared",
+	"features": []
+}
