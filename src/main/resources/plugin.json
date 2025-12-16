@@ -5,5 +5,6 @@
 	"minVersion": "1.131.6 beta 3",
 	"supportedVersion": "1.131.7",
 	"basePackage": "dev.shared",
-	"features": []
+	"features": [],
+	"update": "https://raw.githubusercontent.com/Darkbot-Plugins/SharedPlugin/main/src/main/resources/plugin.json"
 }

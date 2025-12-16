@@ -6,7 +6,7 @@ This plugin is designed to make it easier for multiple developers to implement t
 
 | Contribution      | Details                                                                                                                                                       |
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Report a bug      | You can [file an issue](https://github.com/dm94/SharedPlugin/issues/new/choose) To report a bug.                                                              |
+| Report a bug      | You can [file an issue](https://github.com/Darkbot-Plugins/SharedPlugin/issues/new/choose) To report a bug.                                                   |
 | Contribute code   | You can contribute your code by fixing a bug or implementing a feature.                                                                                       |
 | Help to translate | You can help translate the plugin from .                                                                                                                      |
 | Help in discord   | There are many users asking for help on discord. [Coding Channel in the official Discord](https://discord.com/channels/523159099870019584/700042416576659456) |
@@ -22,7 +22,7 @@ Everyone can implement their functionalities, but the code will be reviewed and 
 The repository can be easily cloned using
 
 ```bash
-$ git clone https://github.com/dm94/SharedPlugin.git
+$ git clone https://github.com/Darkbot-Plugins/SharedPlugin.git
 ```
 
 ### Create a branch
