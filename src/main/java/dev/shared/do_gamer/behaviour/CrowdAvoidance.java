@@ -1,6 +1,7 @@
 package dev.shared.do_gamer.behaviour;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import dev.shared.do_gamer.config.CrowdAvoidanceConfig;
@@ -31,7 +32,8 @@ public class CrowdAvoidance implements Behavior, Configurable<CrowdAvoidanceConf
     private CrowdAvoidanceConfig config;
     private static final double MIN_DISTANCE_TO_PORTAL = 500.0;
     private static final double MIN_DISTANCE_TO_STATION = 1000.0;
-    private static final double AVOIDANCE_DISTANCE = 1000.0;
+    private static final double AVOIDANCE_DISTANCE = 1500.0;
+    private static final double ADJUSTMENT_FACTOR = 3000.0;
 
     public CrowdAvoidance(PluginAPI api) {
         this.bot = api.requireAPI(BotAPI.class);
@@ -125,34 +127,26 @@ public class CrowdAvoidance implements Behavior, Configurable<CrowdAvoidanceConf
     }
 
     private void moveAway(List<Ship> ships) {
-        double cx = 0;
-        double cy = 0;
-        for (Ship s : ships) {
-            cx += s.getX();
-            cy += s.getY();
-        }
-        cx /= ships.size();
-        cy /= ships.size();
-
-        double vx = this.hero.getX() - cx;
-        double vy = this.hero.getY() - cy;
-        double len = Math.hypot(vx, vy);
-        if (len < 1e-6) {
-            vx = 1.0;
-            vy = 0.0;
-            len = 1.0;
+        // Find the closest ship
+        Ship closest = ships.stream().min(Comparator.comparingDouble(this.hero::distanceTo)).orElse(null);
+        if (closest == null) {
+            return;
         }
 
-        double distance = (double) this.config.radius + AVOIDANCE_DISTANCE;
+        double angle = closest.angleTo(this.hero);
+        double speed = (double) this.hero.getSpeed();
+        double distance = (double) this.config.radius + AVOIDANCE_DISTANCE; // Desired distance to keep away
 
-        if (len < distance) {
-            double nx = vx / len;
-            double ny = vy / len;
+        double targetX = closest.getX() - Math.cos(angle) * distance;
+        double targetY = closest.getY() - Math.sin(angle) * distance;
 
-            double targetX = cx + nx * distance;
-            double targetY = cy + ny * distance;
-
-            this.movement.moveTo(targetX, targetY);
+        double overshoot = speed - this.hero.distanceTo(targetX, targetY);
+        if (overshoot > 0) {
+            angle += overshoot / ADJUSTMENT_FACTOR; // Adjust angle slightly based on speed
+            targetX = closest.getX() - Math.cos(angle) * distance;
+            targetY = closest.getY() - Math.sin(angle) * distance;
         }
+
+        this.movement.moveTo(targetX, targetY);
     }
 }
