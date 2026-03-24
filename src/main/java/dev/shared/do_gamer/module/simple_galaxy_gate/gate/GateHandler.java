@@ -38,6 +38,7 @@ public class GateHandler {
     protected boolean moveToCenter = true;
     protected boolean approachToCenter = true;
     protected boolean skipFarTargets = true;
+    protected boolean stickToTarget = false;
     protected boolean fetchServerOffset = false;
     protected boolean safeRefreshInGate = true;
     protected String statusDetails = null;
@@ -130,6 +131,15 @@ public class GateHandler {
             }
         }
         return this.module.hero;
+    }
+
+    /**
+     * Filters the given collection based on gate handler needs.
+     * By default, it returns a list of the given NPCs without any filtering.
+     * Override this method to implement custom filtering logic.
+     */
+    public List<Npc> getFilteredNpcs(List<Npc> npcs) {
+        return npcs;
     }
 
     /**
@@ -236,6 +246,13 @@ public class GateHandler {
      */
     public final boolean isSkipFarTargets() {
         return this.skipFarTargets;
+    }
+
+    /**
+     * Return true to stick to current target and ignore new ones (except priority)
+     */
+    public final boolean isStickToTarget() {
+        return this.stickToTarget;
     }
 
     /**

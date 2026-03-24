@@ -14,9 +14,9 @@ import eu.darkbot.api.game.entities.Npc;
 import eu.darkbot.util.Timer;
 
 public final class MimesisMutinyGate extends GateHandler {
-    private static final double RADIUS = 1_200.0;
-    private static final double MAX_RADIUS = 1_900.0;
-    private static final double REPAIR_RADIUS = 900.0;
+    private static final double TOLERANCE_DISTANCE = 1_200.0;
+    private static final double MAX_RADIUS = 1_800.0;
+    private static final double REPAIR_RADIUS = 800.0;
     private static final double FAR_TARGET_DISTANCE = 1_200.0;
     private static final double PREFER_TARGET_DISTANCE_OFFSET = 200.0;
     private static final long START_EARLY_SECONDS = 20L;
@@ -47,9 +47,10 @@ public final class MimesisMutinyGate extends GateHandler {
         this.jumpToNextMap = false;
         this.safeRefreshInGate = false;
         this.skipFarTargets = false;
+        this.stickToTarget = true;
         this.fetchServerOffset = true;
         this.useGuardableNpcAsSearchLocation = true;
-        this.toleranceDistance = RADIUS;
+        this.toleranceDistance = TOLERANCE_DISTANCE;
         this.repairRadius = REPAIR_RADIUS;
         this.farTargetDistance = FAR_TARGET_DISTANCE;
         this.preferTargetDistanceOffset = PREFER_TARGET_DISTANCE_OFFSET;
@@ -106,6 +107,7 @@ public final class MimesisMutinyGate extends GateHandler {
     private boolean handleGateTick() {
         // If there are portal present, prioritize collecting boxes
         if (!this.module.entities.getPortals().isEmpty()) {
+            this.module.hero.setRunMode();
             if (!this.handleCollectBoxes(false)) {
                 this.module.jumpToNextMap(); // Exit the gate
             }
@@ -125,9 +127,11 @@ public final class MimesisMutinyGate extends GateHandler {
                 // If no boxes to collect, just guard the freighter
                 StateStore.request(StateStore.State.GUARDING);
                 this.module.lootModule.getAttacker().setTarget(guardableNpc);
-                this.module.lootModule.moveToNpc();
+                this.module.lootModule.moveToAnSafePosition();
                 return true;
             }
+            // Update stick to target
+            this.handleStickToTarget();
         } else {
             // If no freighter found, try to collect boxes if any
             return this.handleCollectBoxes(false);
@@ -166,6 +170,24 @@ public final class MimesisMutinyGate extends GateHandler {
     @Override
     public boolean shouldIgnoreBox(Box box) {
         return box == null || box.distanceTo(this.getMapCenterX(), this.getMapCenterY()) > MAX_RADIUS;
+    }
+
+    private boolean npcHasMirrorName(Npc npc) {
+        return this.nameEquals(npc, "-=[ Mirror M1m3si5 ]=-");
+    }
+
+    /**
+     * Determines whether to stick to the current target
+     */
+    private void handleStickToTarget() {
+        Npc target = this.module.lootModule.getAttacker().getTargetAs(Npc.class);
+        if (target != null && this.npcHasMirrorName(target)) {
+            // If the target is the Mirror M1m3si5,
+            // only stick to it if it's the NPC with 3 million HP
+            this.stickToTarget = (target.getHealth().getMaxHp() == 3_000_000.0);
+        } else {
+            this.stickToTarget = true;
+        }
     }
 
     /**

@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import com.github.manolo8.darkbot.config.types.suppliers.BrowserApi;
 
+import dev.shared.do_gamer.module.simple_galaxy_gate.StateStore;
 import eu.darkbot.api.config.types.NpcFlag;
 import eu.darkbot.api.game.entities.Npc;
 import eu.darkbot.api.game.entities.Relay;
@@ -52,7 +53,7 @@ public class LowGate extends GateHandler {
 
     @Override
     public boolean prepareTickModule() {
-        this.statusDetails = null;
+        this.reset();
         return false;
     }
 
@@ -137,12 +138,13 @@ public class LowGate extends GateHandler {
         // Get the first available Relay
         Relay targetRelay = relays.iterator().next();
         this.statusDetails = String.format("Attacking Relay %d", this.getNumber(targetRelay));
+        StateStore.request(StateStore.State.ATTACKING);
 
         // Set target to Relay
         this.module.lootModule.getAttacker().setTarget(targetRelay);
         this.module.hero.setLocalTarget(targetRelay);
         // Move closer to Relay
-        this.module.lootModule.moveToNpc();
+        this.module.lootModule.moveToAnSafePosition();
 
         // Relay attack not supported for Tanos API in bot versions older than 1.131.8
         if (this.module.botBrowserApi.getValue().equals(BrowserApi.TANOS_API)
@@ -163,6 +165,13 @@ public class LowGate extends GateHandler {
                 .filter(n -> this.nameEquals(n, null) && RELAY_IDS.contains(n.getId()))
                 .map(Relay.class::cast)
                 .sorted(Comparator.comparingInt(r -> RELAY_IDS.indexOf(r.getId())))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Npc> getFilteredNpcs(List<Npc> npcs) {
+        return npcs.stream()
+                .filter(n -> !this.nameEquals(n, null)) // Exclude NPCs without a name (e.g., Relays)
                 .collect(Collectors.toList());
     }
 
@@ -196,6 +205,12 @@ public class LowGate extends GateHandler {
 
         // In other cases, kill all NPCs
         return KillDecision.YES;
+    }
+
+    @Override
+    public void reset() {
+        this.bossState = BossState.NONE;
+        this.statusDetails = null;
     }
 
 }
