@@ -1,5 +1,6 @@
 package dev.shared.do_gamer.module.simple_galaxy_gate;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -39,6 +40,8 @@ public final class CustomLootModule extends LootModule {
     private GateHandler gateHandler;
     private boolean repair = false;
     private boolean approachingCenter = false;
+
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final KamikazeHandler kamikazeHandler;
 
@@ -236,8 +239,8 @@ public final class CustomLootModule extends LootModule {
             if (this.shouldKill(target) && this.shouldPreferCurrentTarget(target, best, location)) {
                 return target;
             }
-
         }
+
         return best;
     }
 
@@ -416,10 +419,30 @@ public final class CustomLootModule extends LootModule {
         return base - sum;
     }
 
-    // Make moveToAnSafePosition accessible publicly
-    @Override
-    public void moveToAnSafePosition() {
-        super.moveToAnSafePosition();
+    /**
+     * Moves towards the target, using no-circling logic.
+     */
+    public void approachTarget(Lockable target) {
+        if (target == null) {
+            return;
+        }
+        Location direction = this.movement.getDestination();
+        Location targetLoc = target.getLocationInfo().destinationInTime(400L);
+        double angle = targetLoc.angleTo(this.hero);
+        double radius = this.getRadius(target);
+        double minRad = Math.max(0.0, Math.min(radius - 200.0, radius * 0.5));
+
+        double dist = targetLoc.distanceTo(direction);
+        if (dist <= radius && dist >= minRad) {
+            return;
+        }
+
+        double distance = minRad + SECURE_RANDOM.nextDouble() * Math.max(radius - minRad - 10.0, 0.0);
+        double angleDiff = SECURE_RANDOM.nextDouble() * 0.1 - 0.05;
+
+        direction = this.getBestDir(targetLoc, angle, angleDiff, distance);
+        this.searchValidLocation(direction, targetLoc, angle, distance);
+        this.movement.moveTo(direction);
     }
 
     // Make searchValidLocation accessible publicly
