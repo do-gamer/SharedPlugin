@@ -35,6 +35,8 @@ public final class CustomLootModule extends LootModule {
     protected final ConfigSetting<Integer> collectRadius;
     protected final Collection<? extends Barrier> barriers;
 
+    private static final long GHOST_TARGET_BLACKLIST_MS = 5_000L;
+
     private CustomCollectorModule collector;
     private GateHandler gateHandler;
     private boolean repair = false;
@@ -230,7 +232,12 @@ public final class CustomLootModule extends LootModule {
             if (best == null || Objects.equals(target, best)) {
                 return target;
             }
-            // Skip far target if needed and return best
+            // Skip ghost target
+            if (target.getHealth().getHp() == 0) {
+                target.setBlacklisted(GHOST_TARGET_BLACKLIST_MS); // Temporarily blacklist ghost target
+                return best;
+            }
+            // Skip far target if needed
             if (this.skipFarTarget(target)) {
                 return best;
             }
