@@ -40,6 +40,7 @@ public class GateHandler {
     protected boolean fetchServerOffset = false;
     protected boolean safeRefreshInGate = true;
     protected boolean noPortalsInGate = false;
+    protected boolean showBoxCount = true;
     protected String statusDetails = null;
     protected boolean useGuardableNpcAsSearchLocation = false;
     private Npc cachedGuardableNpc = null;
@@ -247,7 +248,19 @@ public class GateHandler {
         if (target == null) {
             return false; // Extra safety check to avoid potential NPEs
         }
+        // If stick to any target is enabled, ignore individual NPC flags
+        if (this.module.getConfig() != null && this.module.getConfig().other.stickToAnyTarget) {
+            return true;
+        }
+        // Check if the target NPC has the stick to target flag
         return target.getInfo().hasExtraFlag(GateNpcFlag.STICK_TO_TARGET);
+    }
+
+    /**
+     * Return true to show box count in module status
+     */
+    public final boolean isShowBoxCount() {
+        return this.showBoxCount;
     }
 
     /**
