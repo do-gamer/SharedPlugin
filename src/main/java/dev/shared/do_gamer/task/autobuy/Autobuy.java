@@ -310,11 +310,11 @@ public final class Autobuy implements Task, Configurable<AutobuyConfig> {
             this.backpageHelper.purchaseShopItem(task.page, task.shopItem.category, task.shopItem.itemId, task.amount);
             int cost = this.calculateCost(task.shopItem.price, task.amount);
             this.log("Purchased %s item %s x%,d for %,d %s.",
-                    task.page, task.shopItem.code, task.amount, cost, task.shopItem.currency);
+                    this.getLogPageName(task.page), task.shopItem.code, task.amount, cost, task.shopItem.currency);
             this.delay.activate(5_000L); // Extra delay after purchase
         } catch (Exception e) {
             this.log("Could not purchase %s item %s x%,d: %s",
-                    task.page, task.shopItem.code, task.amount, e.getMessage());
+                    this.getLogPageName(task.page), task.shopItem.code, task.amount, e.getMessage());
         }
     }
 
@@ -413,11 +413,9 @@ public final class Autobuy implements Task, Configurable<AutobuyConfig> {
         }
 
         int minRequired = this.config.ammo.getMinConditionForItem(itemId);
-        if (minRequired >= 0) {
-            int current = this.getHangarQuantity(itemId);
-            if (current > minRequired) {
-                return 0;
-            }
+        int current = this.getHangarQuantity(itemId);
+        if (current > minRequired) {
+            return 0;
         }
 
         return amount;
@@ -470,12 +468,12 @@ public final class Autobuy implements Task, Configurable<AutobuyConfig> {
             return;
         }
 
-        this.log("Queued %s purchase for %s x%,d.", page, shopItem.code, amount);
+        this.log("Queued purchase for %s item %s x%,d.", this.getLogPageName(page), shopItem.code, amount);
 
         int remaining = amount;
         if (shopItem.maxAmount > 0 && amount > shopItem.maxAmount) {
-            this.log("Splitting %s purchase for item %s: total x%,d, batch size x%,d.",
-                    page, shopItem.code, amount, shopItem.maxAmount);
+            this.log("Splitting purchase for %s item %s: total x%,d, batch size x%,d.",
+                    this.getLogPageName(page), shopItem.code, amount, shopItem.maxAmount);
         }
         while (remaining > 0) {
             int batch = shopItem.maxAmount > 0 ? Math.min(remaining, shopItem.maxAmount) : remaining;
@@ -598,7 +596,14 @@ public final class Autobuy implements Task, Configurable<AutobuyConfig> {
      * Logs an error when failing to load a shop page.
      */
     private void logShopPageError(String page, String errorMessage) {
-        this.log("Could not load the %s shop page: %s", page, errorMessage);
+        this.log("Could not load the %s shop page: %s", this.getLogPageName(page), errorMessage);
+    }
+
+    /**
+     * Converts a shop page identifier into the printed log-friendly page name.
+     */
+    private String getLogPageName(String page) {
+        return SPECIAL_PAGE.equals(page) ? "Special" : page;
     }
 
     /**
