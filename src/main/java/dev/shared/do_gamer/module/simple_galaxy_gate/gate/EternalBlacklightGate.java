@@ -1,5 +1,7 @@
 package dev.shared.do_gamer.module.simple_galaxy_gate.gate;
 
+import com.github.manolo8.darkbot.core.entities.Npc;
+
 import dev.shared.do_gamer.module.simple_galaxy_gate.StateStore;
 import dev.shared.do_gamer.module.simple_galaxy_gate.config.Maps;
 import eu.darkbot.api.PluginAPI;
@@ -82,16 +84,15 @@ public final class EternalBlacklightGate extends GateHandler {
 
     @Override
     public boolean attackTickModule() {
+        if (this.isSuicideWaveReached() && this.pauseForSuicideWave()) {
+            return true;
+        }
         this.showGateWave();
         return false;
     }
 
     @Override
     public boolean collectTickModule() {
-        if (this.isSuicideWaveReached() && this.module.entities.getPortals().isEmpty()) {
-            this.pauseForSuicideWave();
-            return true;
-        }
         if (StateStore.current() == StateStore.State.COLLECTING) {
             this.showGateWave();
         } else {
@@ -105,15 +106,21 @@ public final class EternalBlacklightGate extends GateHandler {
         if (!this.autoStart) {
             return; // Only handle auto-start scenario
         }
-        if (this.isSuicideWaveReached()
-                && (this.module.hero.getHealth().getHp() == 0 || !this.module.entities.getPortals().isEmpty())) {
-            this.module.bot.setRunning(true);
-            this.autoStart = false;
+        if (this.module.hero.getHealth().getHp() > 0) {
+            this.stopAttackAndSetPassive();
+            this.statusDetails = "suicide wave";
             return;
         }
+        this.module.bot.setRunning(true);
+        this.autoStart = false;
+    }
 
+    /**
+     * Stops the attacker and sets the pet helper to passive.
+     */
+    private void stopAttackAndSetPassive() {
+        this.module.lootModule.getAttacker().stopAttack();
         this.module.petGearHelper.setPassive();
-        this.showSuicideOnWave();
     }
 
     /**
@@ -127,20 +134,26 @@ public final class EternalBlacklightGate extends GateHandler {
         }
     }
 
+    /**
+     * Checks whether the configured suicide wave has been reached or exceeded.
+     */
     private boolean isSuicideWaveReached() {
         int suicideWave = this.module.getConfig().eternalBlacklight.suicideOnWave;
         return suicideWave > 0 && this.ebgApi.getCurrentWave() >= suicideWave;
     }
 
-    private void pauseForSuicideWave() {
-        this.module.petGearHelper.setPassive();
-        this.module.bot.setRunning(false);
-        this.showSuicideOnWave();
-        this.autoStart = true;
-    }
-
-    private void showSuicideOnWave() {
-        this.statusDetails = "suicide wave";
+    /**
+     * Pauses the bot before the suicide to prevent other plugins activity.
+     */
+    private boolean pauseForSuicideWave() {
+        Npc target = this.module.lootModule.getAttacker().getTargetAs(Npc.class);
+        if (target != null && target.distanceTo(this.module.hero) < 1_000.0) {
+            this.stopAttackAndSetPassive();
+            this.module.bot.setRunning(false);
+            this.autoStart = true;
+            return true;
+        }
+        return false;
     }
 
     @Override
