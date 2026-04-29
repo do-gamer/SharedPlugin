@@ -7,16 +7,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.RowSorter;
+import javax.swing.SortOrder;
+import javax.swing.SwingConstants;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
+
 import dev.shared.do_gamer.utils.ConfigHtmlInstructions;
+import eu.darkbot.api.config.ConfigSetting;
 import eu.darkbot.api.config.annotations.Dropdown;
 import eu.darkbot.api.config.annotations.Editor;
 import eu.darkbot.api.config.annotations.Number;
 import eu.darkbot.api.config.annotations.Option;
 import eu.darkbot.api.config.annotations.Percentage;
 import eu.darkbot.api.config.annotations.Readonly;
+import eu.darkbot.api.config.annotations.Table;
 import eu.darkbot.api.config.types.PercentRange;
 import eu.darkbot.api.config.types.ShipMode;
 import eu.darkbot.api.managers.ConfigAPI;
+import eu.darkbot.api.managers.EternalBlacklightGateAPI;
 import eu.darkbot.api.managers.HeroAPI;
 import eu.darkbot.shared.config.ProfileNames;
 
@@ -153,6 +166,74 @@ public final class SimpleGalaxyGateConfig {
         @Option("do_gamer.simple_galaxy_gate.eternal_blacklight.suicide_wave")
         @Number(min = 0, max = 999, step = 1)
         public int suicideOnWave = 0;
+
+        @Option("do_gamer.simple_galaxy_gate.eternal_blacklight.boosters")
+        public BoostersTable boosters = new BoostersTable();
+
+        public static class BoostersTable {
+            @Option("")
+            @Table(controls = {}, decorator = BoostersTable.Decorator.class)
+            public Map<String, Piority> table = initBoosters();
+
+            private static Map<String, Piority> initBoosters() {
+                Map<String, Piority> map = new LinkedHashMap<>();
+                for (EternalBlacklightGateAPI.Category cat : EternalBlacklightGateAPI.Category.values()) {
+                    map.put(cat.name(), new Piority(cat));
+                }
+                return map;
+            }
+
+            public static class Decorator implements Table.Decorator<Piority> {
+                @Override
+                public void handle(JTable table, JScrollPane scrollPane, JPanel wrapper,
+                        ConfigSetting<Map<String, Piority>> setting) {
+                    TableRowSorter<TableModel> sorter = new TableRowSorter<>(table.getModel());
+                    sorter.setSortKeys(List.of(new RowSorter.SortKey(1, SortOrder.ASCENDING)));
+                    table.setRowSorter(sorter);
+
+                    // Constrain priority column to digits-only width
+                    table.getColumnModel().getColumn(1).setPreferredWidth(80);
+                    table.getColumnModel().getColumn(1).setMaxWidth(100);
+
+                    // Center-align priority column
+                    DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+                    centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+                    table.getColumnModel().getColumn(1).setCellRenderer(centerRenderer);
+
+                    // Shrink the table size
+                    scrollPane.setPreferredSize(new java.awt.Dimension(350, 200));
+                }
+            }
+
+            public static class Piority {
+                Piority(EternalBlacklightGateAPI.Category cat) {
+                    switch (cat) {
+                        case DAMAGE_LASER:
+                            this.priority = -5;
+                            break;
+                        case DAMAGE:
+                            this.priority = -4;
+                            break;
+                        case HITCHANCE_LASER:
+                            this.priority = -3;
+                            break;
+                        case HITPOINTS:
+                            this.priority = -2;
+                            break;
+                        case ABILITY_COOLDOWN_TIME:
+                            this.priority = -1;
+                            break;
+                        default:
+                            this.priority = 0;
+                    }
+                }
+
+                @Option("do_gamer.simple_galaxy_gate.eternal_blacklight.boosters.priority")
+                public int priority = 0;
+            }
+
+        }
+
     }
 
     /**

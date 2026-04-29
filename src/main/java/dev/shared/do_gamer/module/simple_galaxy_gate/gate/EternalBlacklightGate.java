@@ -1,9 +1,14 @@
 package dev.shared.do_gamer.module.simple_galaxy_gate.gate;
 
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+
 import com.github.manolo8.darkbot.core.entities.Npc;
 
 import dev.shared.do_gamer.module.simple_galaxy_gate.StateStore;
 import dev.shared.do_gamer.module.simple_galaxy_gate.config.Maps;
+import dev.shared.do_gamer.module.simple_galaxy_gate.config.SimpleGalaxyGateConfig.EternalBlacklightSettings.BoostersTable.Piority;
 import eu.darkbot.api.PluginAPI;
 import eu.darkbot.api.config.types.NpcFlag;
 import eu.darkbot.api.game.items.ItemFlag;
@@ -98,7 +103,34 @@ public final class EternalBlacklightGate extends GateHandler {
         } else {
             this.reset();
         }
+        this.selectBestBooster();
         return false;
+    }
+
+    /**
+     * Selects the best available booster based on configured priorities.
+     * Options are sorted by percentage descending; the one whose category has
+     * the lowest configured priority value is preferred.
+     */
+    private void selectBestBooster() {
+        if (this.ebgApi.getBoosterPoints() <= 0) {
+            return;
+        }
+        Map<String, Piority> boosters = this.module.getConfig().eternalBlacklight.boosters.table;
+        List<? extends EternalBlacklightGateAPI.Booster> options = this.ebgApi.getBoosterOptions();
+        if (options == null || options.isEmpty()) {
+            return;
+        }
+        EternalBlacklightGateAPI.Booster best = options.stream()
+                .sorted(Comparator.comparingInt(EternalBlacklightGateAPI.Booster::getPercentage).reversed())
+                .min(Comparator.comparingInt(b -> {
+                    Piority p = boosters.get(b.getCategoryType().name());
+                    return p != null ? p.priority : 0;
+                }))
+                .orElse(null);
+        if (best != null) {
+            this.ebgApi.selectBooster(best);
+        }
     }
 
     @Override
