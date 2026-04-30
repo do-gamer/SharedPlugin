@@ -176,18 +176,18 @@ public final class SimpleGalaxyGateConfig {
         public static class BoostersTable {
             @Option("")
             @Table(controls = {}, decorator = BoostersTable.Decorator.class)
-            public Map<String, Piority> table = initBoosters();
+            public Map<String, BoosterPriority> table = initBoosters();
 
-            private static Map<String, Piority> initBoosters() {
-                Map<String, Piority> map = new LinkedHashMap<>();
+            private static Map<String, BoosterPriority> initBoosters() {
+                Map<String, BoosterPriority> map = new LinkedHashMap<>();
                 for (Map.Entry<String, CategoryData> entry : BoostersTable.categories.entrySet()) {
-                    map.put(entry.getKey(), new Piority(entry.getValue().priority));
+                    map.put(entry.getKey(), new BoosterPriority(entry.getValue().priority));
                 }
                 return map;
             }
 
-            public static class Piority {
-                Piority(int priority) {
+            public static class BoosterPriority {
+                public BoosterPriority(int priority) {
                     this.priority = priority;
                 }
 
@@ -226,10 +226,10 @@ public final class SimpleGalaxyGateConfig {
              * Decorator for the boosters table to enhance the UI with sorting,
              * column width constraints, and custom cell rendering.
              */
-            public static class Decorator implements Table.Decorator<Piority> {
+            public static class Decorator implements Table.Decorator<BoosterPriority> {
                 @Override
                 public void handle(JTable table, JScrollPane scrollPane, JPanel wrapper,
-                        ConfigSetting<Map<String, Piority>> setting) {
+                        ConfigSetting<Map<String, BoosterPriority>> setting) {
                     TableRowSorter<TableModel> sorter = new TableRowSorter<>(table.getModel());
                     sorter.setSortKeys(List.of(new RowSorter.SortKey(1, SortOrder.ASCENDING)));
                     table.setRowSorter(sorter);
@@ -251,7 +251,8 @@ public final class SimpleGalaxyGateConfig {
                         }
 
                         private String formatCategoryName(String category) {
-                            return BoostersTable.categories.get(category).label;
+                            BoostersTable.CategoryData data = BoostersTable.categories.get(category);
+                            return data != null ? data.label : category;
                         }
                     };
                     table.getColumnModel().getColumn(0).setCellRenderer(categoryRenderer);

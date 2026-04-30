@@ -26,8 +26,8 @@ public final class EternalBlacklightGate extends GateHandler {
     private static final int GATE_CYCLE_WAVES = 51;
     private static final int UBER_KRISTALLON_WAVE_IN_CYCLE = 47;
     private static final double UBER_KRISTALLON_SPLIT_DISTANCE = 300.0;
-    private static final double UBER_KRISTALLON_SHIFT_X = 4_000.0;
-    private static final double UBER_KRISTALLON_SHIFT_Y = 2_000.0;
+    private static final double UBER_KRISTALLON_CENTER_SHIFT_X = 4_000.0;
+    private static final double UBER_KRISTALLON_CENTER_SHIFT_Y = 2_000.0;
     private static final double UBER_KRISTALLON_TOLERANCE_DISTANCE = 1_500.0;
 
     public EternalBlacklightGate() {
@@ -132,12 +132,12 @@ public final class EternalBlacklightGate extends GateHandler {
                 double dist = ubers.get(0).distanceTo(ubers.get(1));
                 if (dist < UBER_KRISTALLON_SPLIT_DISTANCE) {
                     // left top
-                    this.mapCenterX = Defaults.MAP_CENTER_X - UBER_KRISTALLON_SHIFT_X;
-                    this.mapCenterY = Defaults.MAP_CENTER_Y - UBER_KRISTALLON_SHIFT_Y;
+                    this.mapCenterX = Defaults.MAP_CENTER_X - UBER_KRISTALLON_CENTER_SHIFT_X;
+                    this.mapCenterY = Defaults.MAP_CENTER_Y - UBER_KRISTALLON_CENTER_SHIFT_Y;
                 } else {
                     // right bottom
-                    this.mapCenterX = Defaults.MAP_CENTER_X + UBER_KRISTALLON_SHIFT_X;
-                    this.mapCenterY = Defaults.MAP_CENTER_Y + UBER_KRISTALLON_SHIFT_Y;
+                    this.mapCenterX = Defaults.MAP_CENTER_X + UBER_KRISTALLON_CENTER_SHIFT_X;
+                    this.mapCenterY = Defaults.MAP_CENTER_Y + UBER_KRISTALLON_CENTER_SHIFT_Y;
                 }
                 this.toleranceDistance = UBER_KRISTALLON_TOLERANCE_DISTANCE;
                 return;
@@ -171,7 +171,7 @@ public final class EternalBlacklightGate extends GateHandler {
             this.getVisibleGui(GUI).ifPresent(gui -> gui.setVisible(false));
             return;
         }
-        Map<String, BoostersTable.Piority> boosters = this.module.getConfig().eternalBlacklight.boosters.table;
+        Map<String, BoostersTable.BoosterPriority> boosters = this.module.getConfig().eternalBlacklight.boosters.table;
         List<? extends EternalBlacklightGateAPI.Booster> options = this.ebgApi.getBoosterOptions();
         if (options == null || options.isEmpty()) {
             return;
@@ -179,7 +179,7 @@ public final class EternalBlacklightGate extends GateHandler {
         EternalBlacklightGateAPI.Booster best = options.stream()
                 .sorted(Comparator.comparingInt(EternalBlacklightGateAPI.Booster::getPercentage).reversed())
                 .min(Comparator.comparingInt(b -> {
-                    BoostersTable.Piority p = boosters.get(b.getCategoryType().name());
+                    BoostersTable.BoosterPriority p = boosters.get(b.getCategoryType().name());
                     return p != null ? p.priority : 0;
                 }))
                 .orElse(null);
