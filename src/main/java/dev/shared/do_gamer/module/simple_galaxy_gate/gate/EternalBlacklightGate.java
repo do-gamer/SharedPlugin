@@ -17,6 +17,7 @@ import eu.darkbot.api.managers.EternalBlacklightGateAPI;
 import eu.darkbot.api.managers.HeroItemsAPI;
 
 public final class EternalBlacklightGate extends GateHandler {
+    private static final String GUI = "eternal_blacklight";
     private boolean autoStart = false;
     private EternalBlacklightGateAPI ebgApi;
     private HeroItemsAPI items;
@@ -114,6 +115,7 @@ public final class EternalBlacklightGate extends GateHandler {
      */
     private void selectBestBooster() {
         if (this.ebgApi.getBoosterPoints() <= 0) {
+            this.getVisibleGui(GUI).ifPresent(gui -> gui.setVisible(false));
             return;
         }
         Map<String, Piority> boosters = this.module.getConfig().eternalBlacklight.boosters.table;
