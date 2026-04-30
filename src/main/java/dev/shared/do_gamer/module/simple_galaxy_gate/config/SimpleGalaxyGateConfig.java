@@ -177,12 +177,52 @@ public final class SimpleGalaxyGateConfig {
 
             private static Map<String, Piority> initBoosters() {
                 Map<String, Piority> map = new LinkedHashMap<>();
-                for (EternalBlacklightGateAPI.Category cat : EternalBlacklightGateAPI.Category.values()) {
-                    map.put(cat.name(), new Piority(cat));
+                for (Map.Entry<String, CategoryData> entry : BoostersTable.categories.entrySet()) {
+                    map.put(entry.getKey(), new Piority(entry.getValue().priority));
                 }
                 return map;
             }
 
+            public static class Piority {
+                Piority(int priority) {
+                    this.priority = priority;
+                }
+
+                @Option("do_gamer.simple_galaxy_gate.eternal_blacklight.boosters.priority")
+                public int priority = 0;
+            }
+
+            /**
+             * Predefined categories with labels and default priorities for Eternal
+             * Blacklight boosters.
+             */
+            private static final Map<String, CategoryData> categories = Map.of(
+                    EternalBlacklightGateAPI.Category.DAMAGE_LASER.name(), new CategoryData("Laser Damage", 0),
+                    EternalBlacklightGateAPI.Category.DAMAGE.name(), new CategoryData("Damage", 1),
+                    EternalBlacklightGateAPI.Category.HITCHANCE_LASER.name(), new CategoryData("Laser Hitchance", 2),
+                    EternalBlacklightGateAPI.Category.HITPOINTS.name(), new CategoryData("Hitpoints", 3),
+                    EternalBlacklightGateAPI.Category.ABILITY_COOLDOWN_TIME.name(), new CategoryData("Cool Down", 4),
+                    EternalBlacklightGateAPI.Category.SHIELD.name(), new CategoryData("Shield", 5),
+                    EternalBlacklightGateAPI.Category.SPEED.name(), new CategoryData("Speed", 6),
+                    EternalBlacklightGateAPI.Category.DAMAGE_ROCKETS.name(), new CategoryData("Rockets Damage", 7));
+
+            /**
+             * Helper class to store label and default priority for each booster category.
+             */
+            private static final class CategoryData {
+                String label;
+                int priority;
+
+                CategoryData(String label, int priority) {
+                    this.label = label;
+                    this.priority = priority;
+                }
+            }
+
+            /**
+             * Decorator for the boosters table to enhance the UI with sorting,
+             * column width constraints, and custom cell rendering.
+             */
             public static class Decorator implements Table.Decorator<Piority> {
                 @Override
                 public void handle(JTable table, JScrollPane scrollPane, JPanel wrapper,
@@ -200,36 +240,22 @@ public final class SimpleGalaxyGateConfig {
                     centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
                     table.getColumnModel().getColumn(1).setCellRenderer(centerRenderer);
 
+                    // Render category names with friendly labels
+                    DefaultTableCellRenderer categoryRenderer = new DefaultTableCellRenderer() {
+                        @Override
+                        protected void setValue(Object value) {
+                            super.setValue(value == null ? null : this.formatCategoryName(String.valueOf(value)));
+                        }
+
+                        private String formatCategoryName(String category) {
+                            return BoostersTable.categories.get(category).label;
+                        }
+                    };
+                    table.getColumnModel().getColumn(0).setCellRenderer(categoryRenderer);
+
                     // Shrink the table size
-                    scrollPane.setPreferredSize(new java.awt.Dimension(350, 200));
+                    scrollPane.setPreferredSize(new java.awt.Dimension(250, 200));
                 }
-            }
-
-            public static class Piority {
-                Piority(EternalBlacklightGateAPI.Category cat) {
-                    switch (cat) {
-                        case DAMAGE_LASER:
-                            this.priority = -5;
-                            break;
-                        case DAMAGE:
-                            this.priority = -4;
-                            break;
-                        case HITCHANCE_LASER:
-                            this.priority = -3;
-                            break;
-                        case HITPOINTS:
-                            this.priority = -2;
-                            break;
-                        case ABILITY_COOLDOWN_TIME:
-                            this.priority = -1;
-                            break;
-                        default:
-                            this.priority = 0;
-                    }
-                }
-
-                @Option("do_gamer.simple_galaxy_gate.eternal_blacklight.boosters.priority")
-                public int priority = 0;
             }
 
         }
