@@ -177,11 +177,10 @@ public final class EternalBlacklightGate extends GateHandler {
             return;
         }
         EternalBlacklightGateAPI.Booster best = options.stream()
-                .sorted(Comparator.comparingInt(EternalBlacklightGateAPI.Booster::getPercentage).reversed())
-                .min(Comparator.comparingInt(b -> {
+                .min(Comparator.<EternalBlacklightGateAPI.Booster>comparingInt(b -> {
                     BoostersTable.BoosterPriority p = boosters.get(b.getCategoryType().name());
                     return p != null ? p.priority : 0;
-                }))
+                }).thenComparing(Comparator.comparingInt(EternalBlacklightGateAPI.Booster::getPercentage).reversed()))
                 .orElse(null);
         if (best != null) {
             this.ebgApi.selectBooster(best);
