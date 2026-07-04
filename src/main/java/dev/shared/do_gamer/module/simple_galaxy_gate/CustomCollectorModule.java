@@ -17,7 +17,8 @@ import eu.darkbot.shared.modules.CollectorModule;
 
 public final class CustomCollectorModule extends CollectorModule {
 
-    private static final long FAKE_BOX_TIMEOUT_MS = 300_000L;
+    private static final long FAKE_BOX_TIMEOUT_MS = 300_000L; // 5 minutes in milliseconds
+    private static final long CARGO_BOX_TIMEOUT_MS = 30_000L; // 30 seconds in milliseconds
 
     private final EntitiesAPI entities;
     private final Map<String, FakeEntity.FakeBox> fakeBoxes = new HashMap<>();
@@ -77,27 +78,49 @@ public final class CustomCollectorModule extends CollectorModule {
      */
     private void markVisibleBoxesAsFake() {
         for (Box box : new ArrayList<>(this.entities.getBoxes())) {
-            if (box == null || FakeEntity.isFakeEntity(box) || !box.isValid() || box.isCollected()) {
-                continue; // Skip invalid or already collected boxes
+            if (this.shouldSkip(box)) {
+                continue;
             }
 
             String hash = box.getHash();
+            boolean isCargoBox = this.isResource(box.getTypeName());
             FakeEntity.FakeBox fake = this.fakeBoxes.get(hash);
 
             if (fake == null || !fake.isValid()) {
-                fake = this.entities.fakeEntityBuilder()
-                        .location(box.getLocationInfo())
-                        .keepAlive(FAKE_BOX_TIMEOUT_MS)
-                        .removeOnSelect(true)
-                        .box(box.getInfo());
-                this.fakeBoxes.put(hash, fake);
+                this.fakeBoxes.put(hash, this.createFakeBox(box, isCargoBox));
             } else {
-                fake.setLocation(box.getLocationInfo());
-                fake.setTimeout(FAKE_BOX_TIMEOUT_MS);
+                this.updateFakeBox(fake, isCargoBox, box);
             }
         }
 
-        // Clean up invalid or collected fake boxes
+        this.cleanupFakeBoxes();
+    }
+
+    private boolean shouldSkip(Box box) {
+        return box == null
+                || FakeEntity.isFakeEntity(box)
+                || !box.isValid()
+                || box.isCollected();
+    }
+
+    private FakeEntity.FakeBox createFakeBox(Box box, boolean isCargoBox) {
+        return this.entities.fakeEntityBuilder()
+                .location(box.getLocationInfo())
+                .keepAlive(isCargoBox ? CARGO_BOX_TIMEOUT_MS : FAKE_BOX_TIMEOUT_MS)
+                .removeOnSelect(true)
+                .box(box.getInfo());
+    }
+
+    private void updateFakeBox(FakeEntity.FakeBox fake, boolean isCargoBox, Box box) {
+        if (isCargoBox) {
+            return; // Skip updating cargo boxes to avoid resetting their timeout
+        }
+
+        fake.setLocation(box.getLocationInfo());
+        fake.setTimeout(FAKE_BOX_TIMEOUT_MS);
+    }
+
+    private void cleanupFakeBoxes() {
         Iterator<Map.Entry<String, FakeEntity.FakeBox>> iterator = this.fakeBoxes.entrySet().iterator();
         while (iterator.hasNext()) {
             FakeEntity.FakeBox fake = iterator.next().getValue();
