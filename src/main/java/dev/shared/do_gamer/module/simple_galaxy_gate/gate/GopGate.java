@@ -4,6 +4,7 @@ import java.util.Comparator;
 
 import dev.shared.do_gamer.module.simple_galaxy_gate.StateStore;
 import eu.darkbot.api.PluginAPI;
+import eu.darkbot.api.config.types.NpcFlag;
 import eu.darkbot.api.game.entities.Npc;
 import eu.darkbot.api.game.entities.StaticEntity.PlutusGenerator;
 import eu.darkbot.api.managers.GauntletPlutusAPI;
@@ -19,10 +20,11 @@ public final class GopGate extends GateHandler {
     public GopGate() {
         this.npcMap.put(SEEKER_ROCKET_NAME, new NpcParam(600.0, -80));
         this.npcMap.put(WARHEAD_NAME, new NpcParam(600.0, -80));
-        this.npcMap.put(PLUTUS_NAME, new NpcParam(600.0, -20));
+        this.npcMap.put(PLUTUS_NAME, new NpcParam(600.0));
         this.defaultNpcParam = new NpcParam(580.0);
-        this.moveToCenter = false;
         this.showCompletedGates = false;
+        this.approachToCenter = false;
+        this.skipFarTargets = false;
     }
 
     @Override
@@ -93,16 +95,26 @@ public final class GopGate extends GateHandler {
                 .orElse(null);
     }
 
+    private boolean hasOtherNpc(int priority) {
+        return this.module.lootModule.getNpcs().stream()
+                .anyMatch(n -> !this.isTurret(n) && !this.isPlutus(n)
+                        && !n.getInfo().hasExtraFlag(NpcFlag.PASSIVE) // Ignore passive NPCs
+                        && n.getInfo().getPriority() <= priority // Ignore NPCs with higest priority
+                );
+    }
+
     /**
      * Handles attacking the nearest rocket or turret NPC if one is present.
      */
     private boolean handleRocketOrTurretAttack() {
-        // Attack the rocket first
-        Npc npc = this.getRocketNpc();
-        if (npc == null) {
-            npc = this.getTurretNpc();
-        }
+        Npc npc = this.getTurretNpc();
         if (npc != null) {
+            Npc rocketNpc = this.getRocketNpc();
+            if (rocketNpc != null) {
+                npc = rocketNpc; // Prioritize attacking rockets over turrets
+            } else if (npc.distanceTo(this.module.hero) > 1000.0 && this.hasOtherNpc(npc.getInfo().getPriority())) {
+                return false; // If there are other NPCs, don't attack the turret
+            }
             this.module.lootModule.moveToTarget(npc);
             this.module.lootModule.getAttacker().tryLockAndAttack();
             return true;
