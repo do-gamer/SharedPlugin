@@ -33,10 +33,14 @@ public final class GopGate extends GateHandler {
     private Npc rocketNpcCache;
 
     public GopGate() {
-        this.npcMap.put(SEEKER_ROCKET_NAME, new NpcParam(620.0, -80));
-        this.npcMap.put(WARHEAD_NAME, new NpcParam(620.0, -80));
-        this.npcMap.put(PLUTUS_NAME, new NpcParam(620.0));
-        this.defaultNpcParam = new NpcParam(600.0);
+        this.npcMap.put(SEEKER_ROCKET_NAME, new NpcParam(600.0, -80));
+        this.npcMap.put(WARHEAD_NAME, new NpcParam(600.0, -80));
+        this.npcMap.put(PLUTUS_NAME, new NpcParam(580.0));
+        this.npcMap.put("-=[ Kristallon ]=-", new NpcParam(580.0));
+        this.npcMap.put("( UberLordakium )", new NpcParam(590.0));
+        this.npcMap.put("=^(Natal Nap)^=", new NpcParam(520.0));
+        this.npcMap.put("=^(Kodkod)^=", new NpcParam(580.0));
+        this.defaultNpcParam = new NpcParam(560.0);
         this.showCompletedGates = false;
         this.approachToCenter = false;
         this.skipFarTargets = false;
@@ -203,6 +207,17 @@ public final class GopGate extends GateHandler {
     }
 
     /**
+     * Gets the nearest selectable, non-Plutus NPC to the hero.
+     */
+    private Npc getNearestNpcExcludingPlutus() {
+        return this.module.lootModule.getNpcs().stream()
+                .filter(n -> n != null && n.isValid() && n.isSelectable()
+                        && !this.isPlutus(n) && n.distanceTo(this.module.hero) <= 800.0)
+                .min(Comparator.comparingDouble(npc -> npc.distanceTo(this.module.hero)))
+                .orElse(null);
+    }
+
+    /**
      * Moves the hero to the nearest heal generator if one is present.
      */
     private boolean moveToHealGenerator() {
@@ -216,10 +231,10 @@ public final class GopGate extends GateHandler {
         if (healGenerator != null) {
             this.module.movement.moveTo(healGenerator);
 
-            // Kill the nearest rocket if one is present while moving to the heal generator
-            Npc rocketNpc = this.getRocketNpc();
-            if (rocketNpc != null) {
-                this.module.lootModule.getAttacker().setTarget(rocketNpc);
+            // Kill the nearest NPC if one is present while moving to the heal generator
+            Npc nearestNpc = this.getNearestNpcExcludingPlutus();
+            if (nearestNpc != null) {
+                this.module.lootModule.getAttacker().setTarget(nearestNpc);
                 this.module.lootModule.getAttacker().tryLockAndAttack();
             }
             return true;
