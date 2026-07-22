@@ -112,8 +112,11 @@ public class AutoRefin implements Behavior, Configurable<AutoRefinConfig> {
                         lastRefineAttemptAtNanos = 0L;
                     } catch (RuntimeException ignored) {
                         // Keep bot alive on transient client/API states (for example while the user
-                        // is manually interacting with upgrade windows), retry next tick.
-                        System.out.println("Auto refiner: refine attempt failed, will retry next tick.");
+                        // is manually interacting with upgrade windows). lastRefineAttemptAtNanos was
+                        // already set above, so the next attempt is throttled by
+                        // FAILED_RETRY_DELAY_NANOS instead of retrying every tick, avoiding hammering
+                        // the API while the client is in this unstable state.
+                        System.out.println("Auto refiner: refine attempt failed, will retry after a short delay.");
                     }
                 });
     }
